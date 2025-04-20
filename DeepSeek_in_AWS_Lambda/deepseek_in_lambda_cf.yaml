@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Deploys AWS Lambda with DeepSeek API integration using Python'
+
+Parameters:
+  DeepSeekApiKey:
+    Type: String
+    NoEcho: true
+    Description: 'Your DeepSeek API key (will be stored in Lambda environment variables)'
+  PythonRuntime:
+    Type: String
+    Default: python3.9
+    AllowedValues: [python3.8, python3.9, python3.10]
+    Description: 'Python runtime version'
+
+Resources:
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: [lambda.amazonaws.com]
+            Action: ['sts:AssumeRole']
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DeepSeekLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+
+  DeepSeekLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: deepseek-ai-handler
+      Description: 'Python Lambda function to call DeepSeek API'
+      Handler: lambda_function.lambda_handler
+      Runtime: !Ref PythonRuntime
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Architectures:
+        - arm64  # Cost-optimized architecture
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          DEEPSEEK_API_KEY: !Ref DeepSeekApiKey
+      Code:
+        ZipFile: |
+          import os
+          import json
+          from deepseek import DeepSeek
+
+          def lambda_handler(event, context):
+              try:
+                  client = DeepSeek(api_key=os.environ["DEEPSEEK_API_KEY"])
+                  user_input = json.loads(event["body"]).get("query") if "body" in event else event.get("query", "Hello!")
+                  
+                  response = client.chat.completions.create(
+                      model="deepseek-chat",
+                      messages=[
+                          {"role": "system", "content": "You are a helpful AI assistant."},
+                          {"role": "user", "content": user_input}
+                      ],
+                      max_tokens=150
+                  )
+                  
+                  return {
+                      "statusCode": 200,
+                      "headers": {"Content-Type": "application/json"},
+                      "body": json.dumps({"response": response.choices[0].message.content})
+                  }
+              except Exception as e:
+                  return {"statusCode": 500, "body": str(e)}
+
+  ApiGatewayRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: DeepSeekAPI
+      Description: 'API Gateway for DeepSeek Lambda integration'
+
+  ApiGatewayResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+      PathPart: 'ask'
+
+  ApiGatewayMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 
+          - 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations'
+          - LambdaArn: !GetAtt DeepSeekLambdaFunction.Arn
+
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt DeepSeekLambdaFunction.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: 'apigateway.amazonaws.com'
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/*'
+
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: ApiGatewayMethod
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      StageName: prod
+
+Outputs:
+  ApiEndpoint:
+    Description: 'API Gateway endpoint URL for DeepSeek integration'
+    Value: !Sub 'https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.amazonaws.com/prod/ask'
+  LambdaArn:
+    Description: 'DeepSeek Lambda function ARN'
+    Value: !GetAtt DeepSeekLambdaFunction.Arn
