@@ -39,7 +39,7 @@ def lambda_handler(event, context):
             "headers": {
                 "Content-Type": "application/json"},
                 "body": json.dumps({
-                    "response": response.choices[0].message.content,
+                    "response": response,
                     "model": model_to_use  # For debugging
                 })
         }
