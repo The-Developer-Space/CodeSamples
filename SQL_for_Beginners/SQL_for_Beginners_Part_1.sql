@@ -6,7 +6,7 @@ USE BeginnerSQL;
 
 -- Create a table
 CREATE TABLE Users (
-    ID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID BIGSERIAL PRIMARY KEY,
     FirstName VARCHAR(50) NOT NULL,
     LastName VARCHAR(50) NULL,
     Age INT CHECK (age > 0),
@@ -25,7 +25,9 @@ DROP COLUMN PhoneNumber;
 DROP TABLE Users;
 
 --Insert data into the table
-INSERT INTO Users (FirstName, LastName, Age, Email) VALUES
+INSERT INTO Users 
+(FirstName, LastName, Age, Email) 
+VALUES
 ('John', 'Doe', 30, 'john.doe@example.com'),
 ('Jane', 'Smith', 25, 'jane.smith@example.com'),
 ('Alice', 'Johnson', 28, 'alice.johnson@example.com'),

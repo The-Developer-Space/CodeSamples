@@ -2,7 +2,7 @@
 DROP TABLE Users;
 
 CREATE TABLE Users (
-    UserID INT PRIMARY KEY AUTO_INCREMENT,
+    UserID BIGSERIAL PRIMARY KEY,
     FirstName VARCHAR(50),
     LastName VARCHAR(50),
     Age INT,
@@ -13,7 +13,8 @@ CREATE TABLE Users (
     SignUpDate DATE,
     IsActive BOOLEAN,
     AccountBalance DECIMAL(10,2),
-    MembershipLevel VARCHAR(20)
+    MembershipLevel VARCHAR(20),
+    CreatedAt TIMESTAMP
 );
 
 --Delete all rows from the table
