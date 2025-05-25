@@ -19,7 +19,7 @@ VALUES
 ((SELECT UserID FROM Users WHERE FirstName='Amelia' AND LastName='Gonzalez'), 'Digicam', 200),
 ((SELECT UserID FROM Users WHERE FirstName='Amelia' AND LastName='Gonzalez'), 'Tripod', 30),
 (NULL, 'External Drive', 100),
-(NULL, 'Speaker', 50),
+(9999, 'Speaker', 50),
 (NULL, 'Microphone', 25);
 
 --INNER JOIN
