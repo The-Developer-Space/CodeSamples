@@ -1,5 +1,5 @@
 --Find users who have placed at least one order.
-SELECT name FROM Users
+SELECT FirstName, LastName FROM Users
 WHERE UserID IN (SELECT UserID FROM Orders);
 
 --Get each user's name and the number of orders they have placed.
@@ -7,14 +7,14 @@ SELECT FirstName, LastName,
        (SELECT COUNT(*) FROM Orders WHERE Orders.UserID = Users.UserID) AS order_count
 FROM Users;
 
---List users with more than 2 orders.
+--List users with more than one order.
 SELECT FirstName, LastName, order_count FROM (
     SELECT Users.FirstName, Users.LastName, COUNT(Orders.OrderID) AS order_count
     FROM Users
     JOIN Orders ON Users.UserID = Orders.UserID
-    GROUP BY Users.name
+    GROUP BY Users.FirstName, Users.LastName
 ) AS UserOrders
-WHERE order_count > 2;
+WHERE order_count > 1;
 
 --Find users who have placed at least one order
 --using IN
@@ -39,7 +39,7 @@ SELECT FirstName, LastName FROM Users
 WHERE UserID NOT IN (SELECT UserID FROM Orders);
 
 --using NOT EXISTS
-ELECT FirstName, LastName FROM Users U 
+SELECT FirstName, LastName FROM Users U 
 WHERE NOT EXISTS (
   	SELECT 1 FROM Orders O WHERE O.UserID = U.UserID 
 );
@@ -51,12 +51,12 @@ LEFT JOIN Orders ON Users.UserID = Orders.UserID
 GROUP BY Users.FirstName, Users.LastName;
 
 --Subquery
-SELECT FirstName, LastName
+SELECT FirstName, LastName,
        (SELECT COUNT(*) FROM Orders WHERE Orders.UserID = Users.UserID) AS order_count
 FROM Users;
 
 --Users With Above-Average Orders
-SELECT FirstName, LastName 
+SELECT FirstName, LastName
 FROM Users U
 WHERE 
 	(SELECT COUNT(*) FROM Orders O WHERE O.UserID = O.UserID) 
