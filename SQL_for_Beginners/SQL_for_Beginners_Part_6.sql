@@ -7,12 +7,12 @@ CREATE TABLE Users (
 --UNIQUE
 CREATE TABLE Employees (
     EmployeeID INT PRIMARY KEY,
-    Email VARCHAR(255) UNIQUE
+    Email VARCHAR(255) CONSTRAINT UQ_Employees_Email UNIQUE
 );
 
 --PRIMARY KEY
 CREATE TABLE Products (
-    ProductID INT PRIMARY KEY,
+    ProductID INT CONSTRAINT PK_Products PRIMARY KEY,
     ProductName VARCHAR(255)
 );
 
@@ -20,46 +20,47 @@ CREATE TABLE Products (
 CREATE TABLE Orders (
     OrderID INT PRIMARY KEY,
     CustomerID INT,
-    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+    CONSTRAINT FK_Orders_CustomerID FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
 );
 
 --CHECK
-CREATE TABLE Accounts (
-    AccountID INT PRIMARY KEY,
-    Balance DECIMAL(10,2) CHECK (Balance >= 0)
+CREATE TABLE Products (
+    ProductID INT PRIMARY KEY,
+    Price DECIMAL(10, 2) CONSTRAINT CHK_Products_Price CHECK (Price > 0),
+    DiscountedPrice DECIMAL(10, 2) CONSTRAINT CHK_Products_DiscountedPrice CHECK (DiscountedPrice > 0),
+    CONSTRAINT CHK_Products_Price_gt_DiscountedPrice CHECK (Price > DiscountedPrice)
 );
 
 --DEFAULT
-CREATE TABLE Members (
-    MemberID INT PRIMARY KEY,
-    JoinDate DATE DEFAULT CURRENT_DATE
+CREATE TABLE Orders (
+    OrderID INT PRIMARY KEY,
+    OrderDate DATE CONSTRAINT DF_Orders_OrderDate DEFAULT CURRENT_DATE
 );
 
 --Composite Keys
-CREATE TABLE Enrollment (
-    StudentID INT,
-    CourseID INT,
-    PRIMARY KEY (StudentID, CourseID)
+CREATE TABLE OrderDetails (
+    OrderID INT,
+    ProductID INT,
+    CONSTRAINT PK_OrderDetails PRIMARY KEY (OrderID, ProductID)
 );
 
 --Adding Constrains after table is created
-ALTER TABLE Orders ADD CONSTRAINT chk_amount CHECK (OrderAmount > 0);
+ALTER TABLE Orders ADD CONSTRAINT CHK_Orders_OrderAmount CHECK (OrderAmount > 0);
 
 --Real-World Example
 CREATE TABLE Customers (
-    CustomerID INT PRIMARY KEY,
-    Email VARCHAR(100) UNIQUE NOT NULL
+    CustomerID INT CONSTRAINT PK_Customers PRIMARY KEY,
+    Email VARCHAR(100) CONSTRAINT UQ_Products_Email UNIQUE NOT NULL
 );
 
 CREATE TABLE Products (
-    ProductID INT PRIMARY KEY,
-    Price DECIMAL(10, 2) CHECK (Price > 0)
+    ProductID INT CONSTRAINT PK_Products PRIMARY KEY,
+    Price DECIMAL(10, 2) CONSTRAINT CHK_Products_Price CHECK (Price > 0)
 );
 
 CREATE TABLE Orders (
-    OrderID INT PRIMARY KEY,
+    OrderID INT CONSTRAINT PK_Orders PRIMARY KEY,
     CustomerID INT,
-    OrderDate DATE DEFAULT CURRENT_DATE,
-    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+    OrderDate DATE CONSTRAINT DF_Orders_OrderDate DEFAULT CURRENT_DATE,
+    CONSTRAINT FK_Orders_CustomerID FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
 );
-
